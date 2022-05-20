@@ -41,7 +41,8 @@ class ImageToHash(object):
         :param hash_algo: The hash algorithm.
         :return: an ImageHash.
         """
-        return hash_algo_dict[hash_algo](Image.open(image_path), hash_size=hash_size)
+        h = hash_algo_dict[hash_algo](Image.open(image_path), hash_size=hash_size)
+        return h
 
     @staticmethod
     def get_images_list(path, natural_order=True):
@@ -113,19 +114,21 @@ class ImageToHash(object):
 
         # For each image calculate the phash and store it in a DataFrame
         for image in tqdm(self.img_file_list):
+            try:
+                hash_code = self.img_hash(image, self.hash_size, self.hash_algo)
 
-            hash_code = self.img_hash(image, self.hash_size, self.hash_algo)
+                result = {'file': image, 'short_file': image.split(os.sep)[-1], 'hash': hash_code,
+                          'hash_list': list(str(hash_code))}
+                df_hashes = df_hashes.append(result, ignore_index=True)
 
-            result = {'file': image, 'short_file': image.split(os.sep)[-1], 'hash': hash_code,
-                      'hash_list': list(str(hash_code))}
-            df_hashes = df_hashes.append(result, ignore_index=True)
+                if hash_code in dict_hash_to_images:
+                    if self.verbose == 2:
+                        print(image, '  already exists as', ' '.join(dict_hash_to_images[hash_code]))
+                    already_exist_counter += 1
 
-            if hash_code in dict_hash_to_images:
-                if self.verbose == 2:
-                    print(image, '  already exists as', ' '.join(dict_hash_to_images[hash_code]))
-                already_exist_counter += 1
-
-            dict_hash_to_images[hash_code] = dict_hash_to_images.get(hash_code, []) + [image]
+                dict_hash_to_images[hash_code] = dict_hash_to_images.get(hash_code, []) + [image]
+            except:
+                print(f'unable to get pHash for {image}', file=sys.stderr)
 
         # Are there any duplicates in terms of hashes of size 'hash_size'?
         print("{0} out to {1}".format(already_exist_counter, len(self.img_file_list)))
