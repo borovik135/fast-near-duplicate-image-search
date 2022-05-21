@@ -1,5 +1,5 @@
 import multiprocessing
-import os
+import os, sys
 import time
 
 import imagehash
@@ -41,8 +41,7 @@ class ImageToHash(object):
         :param hash_algo: The hash algorithm.
         :return: an ImageHash.
         """
-        h = hash_algo_dict[hash_algo](Image.open(image_path), hash_size=hash_size)
-        return h
+        return hash_algo_dict[hash_algo](Image.open(image_path), hash_size=hash_size)
 
     @staticmethod
     def get_images_list(path, natural_order=True):
